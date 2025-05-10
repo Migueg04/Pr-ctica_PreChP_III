@@ -1,11 +1,23 @@
 import { AppDispatcher, Action } from './Dispatcher';
+import getPlants from '../services/Plants';
 
-export type State = {};
+export type Plants = {
+    id: number,
+    commonName: string,
+    scientificName: string,
+    img: string,
+}
+
+export type State = {
+    plant: Plants[]
+};
 
 type Listener = (state: State) => void;
 
 class Store {
-    private _myState: State = {}
+    private _myState: State = {
+        plant: []
+    }
 
     private _listeners: Listener[] = [];
 
@@ -19,7 +31,12 @@ class Store {
 
     _handleActions(action: Action): void {
         switch (action.type) {
-            case "UNO":
+            case "GET_PLANTS":
+                this._myState = {
+                    ...this._myState,
+                    plant: action.payload as Plants[]
+                }
+                this._emitChange();
                 break;
         }
     }
