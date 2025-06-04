@@ -1,7 +1,7 @@
 import { store, Plants } from '../flux/Store';
 import { plantsActions } from '../flux/Actions';
 
-class Root extends HTMLElement {
+class adminRoot extends HTMLElement {
     constructor() {
         super();
         this.attachShadow({ mode: 'open' });
@@ -61,11 +61,9 @@ render() {
             }
         </style>
 
-        <my-garden></my-garden>
-
         <div class="header-container">
-            <h1>La Plantas Tienda</h1>
-            <a id="admin-button" href="/admin.html">Administrar plantas</a>
+            <h1>Administrar Plantas</h1>
+            <a id="admin-button" href="/index.html">Volver a tienda</a>
         </div>
 
         <div id="card-container"></div>     
@@ -79,12 +77,9 @@ render() {
     sortedPlants.forEach((plant: Plants) => {
         const div = document.createElement("div");
         div.innerHTML = `
-            <card-component 
-                plantId="${plant.id}" 
-                commonName="${plant.common_name}" 
-                scientificName="${plant.scientific_name}" 
-                image="${plant.image}">
-            </card-component>
+        <admin-card 
+            plantId="${plant.id}">
+        </admin-card>
         `;
         plantsList?.appendChild(div);
     });
@@ -92,4 +87,4 @@ render() {
 
 }
 
-export default Root;
+export default adminRoot;
