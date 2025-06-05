@@ -1,121 +1,114 @@
-import { AppDispatcher, Action } from './Dispatcher';
+import { AppDispatcher } from './Dispatcher';
+import { Action } from './Dispatcher';
+import {auth, posts, postsActions, Screen, screenActionType } from './Actions';
 
-export type Plants = {
-    id: number;
-    common_name: string;
-    scientific_name: string;
-    image: string;
-    type: string;
-    origin: string;
-    flowering_season: string;
-    sun_exposure: string;
-    watering: string;
-    inGarden: boolean;
-};
+type Callback = () => void;
+
+// export type Garden = {
+//   plants: Plant[],
+//   name: string,
+// }
+
+export type Post = {
+  title: string,
+  caption: string,
+  postId: string,
+}
+
+export type User = {
+  username: string,
+  userType: string, // 'admin' | 'user'
+}
 
 export type State = {
-    plant: Plants[]
-};
+  currentUser: User | null,
+  postList: Post[],
+  screen: Screen,
+}
 
 type Listener = (state: State) => void;
 
-const STORAGE_KEY = "plants-app";
-
 class Store {
-    private _myState: State = {
-        plant: []
-    }
+  private _myState: State = {
+      currentUser: null,
+      postList: [],
+      screen: Screen.REGISTER,
+  }
 
-    private _listeners: Listener[] = [];
+  private _listeners: Listener[] = [];
 
-    constructor() {
-        this.loadFromStorage();
-        AppDispatcher.register(this._handleActions.bind(this));
-    }
+  constructor() {
+      AppDispatcher.register(this._handleActions.bind(this)); // Bind the context of this method to the Store instance
+  }
 
-    getState() {
-        return this._myState;
-    }
+  getState() {
+      return this._myState;
+  }
 
-    setState(newState: State) {
-        this._myState = newState;
-        this.persist(); // 👈 Guardar en localStorage
+  _handleActions(action: Action): void {
+    switch (action.type) {
+      // ================ TODO: Implementar cases usando utils de FIREBASE! ==============
+
+      case posts.GET_POSTS:
+        this._myState.postList = action.payload as Post[];
         this._emitChange();
+        break;
+      case posts.ADD_POST:
+        this._myState.postList = action.payload as Post[];
+        this._emitChange();
+        break;
+      case posts.DELETE_POST:
+        this._myState.postList = action.payload as Post[];
+        this._emitChange();
+        break;
+      case screenActionType.CHANGE_SCREEN:
+        this._myState.screen = action.payload as Screen;
+        this._emitChange();
+        break;
+      case auth.LOGIN:
+        this._myState.currentUser = action.payload as User;
+        this._myState.screen = Screen.DASHBOARD; // Change screen to DASHBOARD on login
+        this._emitChange();
+        break;
+      case auth.LOGOUT:
+        this._myState.currentUser = null;
+        this._myState.screen = Screen.LOGIN; // Reset screen to LOGIN on logout
+        this._emitChange();
+        break;
+      default:
+        break;
     }
+    this.persist();
+  }
 
-    private persist() {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(this._myState));
+  private _emitChange(): void {
+    const state = this.getState();
+    for (const listener of this._listeners) {
+        listener(state);
     }
+  }
 
-    private loadFromStorage() {
-        const data = localStorage.getItem(STORAGE_KEY);
-        if (data) {
-            try {
-                this._myState = JSON.parse(data);
-            } catch (e) {
-                console.error("Error al cargar localStorage:", e);
-            }
-        }
+  // Permite a los componentes suscribirse al store
+  subscribe(listener: Listener): void {
+    this._listeners.push(listener);
+    listener(this.getState()); // Emitir estado actual al suscribirse
+  }
+
+  // Permite quitar la suscripción
+  unsubscribe(listener: Listener): void {
+    this._listeners = this._listeners.filter(l => l !== listener);
+  }
+
+  persist(): void {
+    localStorage.setItem('flux:state', JSON.stringify(this._myState));
+  }
+
+  load(): void {
+    const persistedState = localStorage.getItem('flux:state');
+    if (persistedState) {
+      this._myState = JSON.parse(persistedState);
+      this._emitChange(); // Emitir el nuevo estado
     }
-
-    private _handleActions(action: Action): void {
-        switch (action.type) {
-            case "GET_PLANTS":
-                
-                if (this._myState.plant.length === 0) {
-                    this._myState = {
-                        ...this._myState,
-                        plant: action.payload as Plants[]
-                    };
-                    this.persist();
-                    this._emitChange();
-                }
-                break;
-
-            case "ADD_TO_GARDEN":
-                this.setState({
-                    ...this._myState,
-                    plant: this._myState.plant.map(p =>
-                        p.id === Number(action.payload) ? { ...p, inGarden: true } : p
-                    )
-                });
-                break;
-
-            case "REMOVE_FROM_GARDEN":
-                this.setState({
-                    ...this._myState,
-                    plant: this._myState.plant.map(p =>
-                        p.id === Number(action.payload) ? { ...p, inGarden: false } : p
-                    )
-                });
-                break;
-
-            case "UPDATE_PLANT":
-                this.setState({
-                    ...this._myState,
-                    plant: this._myState.plant.map(p =>
-                        p.id === action.payload.id ? { ...p, ...action.payload } : p
-                    )
-                });
-                break;
-        }
-    }
-
-    private _emitChange(): void {
-        const state = this.getState();
-        for (const listener of this._listeners) {
-            listener(state);
-        }
-    }
-
-    subscribe(listener: Listener): void {
-        this._listeners.push(listener);
-        listener(this.getState());
-    }
-
-    unsubscribe(listener: Listener): void {
-        this._listeners = this._listeners.filter(l => l !== listener);
-    }
+  }
 }
-
 export const store = new Store();

@@ -1,6 +1,6 @@
 export interface Action {
     type: string;
-    payload?: any;
+    payload?: object | number | string | null;
 }
 
 export class Dispatcher {
@@ -9,12 +9,11 @@ export class Dispatcher {
     constructor() {
         this._listeners = [];
     }
-
     register(callback: (action: Action) => void): void {
         this._listeners.push(callback);
     }
-
-    dispatch(action: any): void {
+    
+    dispatch(action: Action): void {
         for (const listener of this._listeners) {
             listener(action);
         }

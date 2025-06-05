@@ -1,5 +1,5 @@
-import { store, Plants } from '../flux/Store';
-import { plantsActions } from '../flux/Actions';
+import { Screen } from "../flux/Actions";
+import { State, store } from "../flux/Store";
 
 class Root extends HTMLElement {
     constructor() {
@@ -7,89 +7,69 @@ class Root extends HTMLElement {
         this.attachShadow({ mode: 'open' });
     }
 
-    async connectedCallback() {
-        await plantsActions.getPlants();
-        this.render();
+    handleChange(state: State) {
+        this.render(state);
     }
 
-render() {
-    if (!this.shadowRoot) return;
+    async connectedCallback() {
+        store.load();
+        store.subscribe((state: State) => this.handleChange(state));
+        console.log(store.getState());
+        this.render(store.getState());
+    }
+    
+    async render(state = store.getState()) {
+        if (!this.shadowRoot) return;
 
-    this.shadowRoot.innerHTML = `
-        <style>
-            :host {
-                display: block;
-                padding: 1rem;
-                font-family: Arial, sans-serif;
-                background: #f9f9f9;
-                min-height: 100vh;
-            }
+        this.shadowRoot.innerHTML = ``;
 
-            .header-container {
-                display: flex;
-                justify-content: center;
-                align-items: center;
-                gap: 2rem;
-                margin-bottom: 2rem;
-            }
+        switch (state.screen) {
+            case Screen.REGISTER:
+                this.shadowRoot.innerHTML = `
+                    <register-component></register-component>
+                `;
+                break;
+            case Screen.LOGIN:
+                this.shadowRoot.innerHTML = `
+                    <login-component></login-component>
+                `;
+                break;
+            case Screen.DASHBOARD:
+                if(state.currentUser) {
+                    this.shadowRoot.innerHTML = `
+                        <dashboard-component></dashboard-component>
+                    `;
+                    break;
+                } else {
+                    this.shadowRoot.innerHTML = `
+                        <login-component></login-component>
+                    `;
+                    break;
+                }
+            
+            
+            // case Screen.GARDEN:
+            //     this.shadowRoot.innerHTML = `
+            //         <garden-component></garden-component>
+            //     `;
+            //     break;
+            
+            // case Screen.PLANTS_MANAGER:
+            //     this.shadowRoot.innerHTML = `
+            //         <plants-manager></plants-manager>
+            //     `;
+            //     break;
 
-            h1 {
-                color: #2d2d2d;
-                margin: 0;
-            }
+            // case Screen.GARDEN_MANAGER:
+            //     this.shadowRoot.innerHTML = `
+            //         <garden-manager></garden-manager>
+            //     `;
+            //     break;
 
-            #admin-button {
-                background-color: #1976d2;
-                color: white;
-                border: none;
-                padding: 0.5rem 1rem;
-                border-radius: 6px;
-                font-size: 1rem;
-                cursor: pointer;
-                transition: background-color 0.3s;
-            }
-
-            #admin-button:hover {
-                background-color: #115293;
-            }
-
-            #card-container {
-                display: grid;
-                grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-                gap: 1.5rem;
-                justify-items: center;
-            }
-        </style>
-
-        <my-garden></my-garden>
-
-        <div class="header-container">
-            <h1>La Plantas Tienda</h1>
-            <a id="admin-button" href="/admin.html">Administrar plantas</a>
-        </div>
-
-        <div id="card-container"></div>     
-    `;
-
-    const sortedPlants = [...store.getState().plant].sort((a, b) =>
-        a.common_name.localeCompare(b.common_name)
-    );
-
-    const plantsList = this.shadowRoot?.querySelector("#card-container")
-    sortedPlants.forEach((plant: Plants) => {
-        const div = document.createElement("div");
-        div.innerHTML = `
-            <card-component 
-                plantId="${plant.id}" 
-                commonName="${plant.common_name}" 
-                scientificName="${plant.scientific_name}" 
-                image="${plant.image}">
-            </card-component>
-        `;
-        plantsList?.appendChild(div);
-    });
-}
-
+            default:
+                break;
+        }
+    }
 }
 
 export default Root;
